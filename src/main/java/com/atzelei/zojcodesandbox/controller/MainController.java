@@ -1,12 +1,10 @@
 package com.atzelei.zojcodesandbox.controller;
 
+import com.atzelei.zojcodesandbox.Docker.cppDockerSandbox;
 import com.atzelei.zojcodesandbox.JavaDockerCodeSandbox;
-import com.atzelei.zojcodesandbox.JavaDockerCodeSandboxOld;
-import com.atzelei.zojcodesandbox.JavaNativeCodeSandbox;
 import com.atzelei.zojcodesandbox.cpp.cppDemo;
 import com.atzelei.zojcodesandbox.model.ExecuteCodeRequest;
 import com.atzelei.zojcodesandbox.model.ExecuteCodeResponse;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -23,13 +21,11 @@ public class MainController
     private static final String AUTH_REQUEST_SECRET = "secretKey";
 
     @Resource
-    private JavaNativeCodeSandbox javaNativeCodeSandbox;
+    private cppDockerSandbox cppDockerSandbox ;
 
     @Resource
     private JavaDockerCodeSandbox javaDockerCodeSandbox;
 
-    @Resource
-    private cppDemo cppDemo;
 
     @GetMapping("/hello")
     public String getL()
@@ -65,10 +61,13 @@ public class MainController
         ExecuteCodeResponse executeCodeResponse;
         if (language.equals("java"))
         {
-           executeCodeResponse = javaDockerCodeSandbox.executeCode(executeCodeRequest);
+            executeCodeResponse = javaDockerCodeSandbox.executeCode(executeCodeRequest);
+        }
+        else if (language.equals("cpp")) {
+            executeCodeResponse = cppDockerSandbox.executeCode(executeCodeRequest);
         }
         else {
-            executeCodeResponse = cppDemo.executeCode(executeCodeRequest);
+            throw new RuntimeException("只能使用c++或者java");
         }
 
 

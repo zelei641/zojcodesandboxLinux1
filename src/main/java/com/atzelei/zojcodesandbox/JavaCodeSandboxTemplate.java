@@ -154,6 +154,7 @@ public abstract class JavaCodeSandboxTemplate implements CodeSandbox {
         List<String> outputList = new ArrayList<>();
         // 取用时最大值，便于判断是否超时
         long maxTime = 0;
+        long maxMmory = 0;
         for (ExecuteMessage executeMessage : executeMessageList) {
             String errorMessage = executeMessage.getErrorMessage();
             if (StrUtil.isNotBlank(errorMessage)) {
@@ -164,16 +165,22 @@ public abstract class JavaCodeSandboxTemplate implements CodeSandbox {
             }
             outputList.add(executeMessage.getMessage());
             Long time = executeMessage.getTime();
+            Long memory = executeMessage.getMemory();
             if (time != null) {
                 maxTime = Math.max(maxTime, time);
+            }
+            if (memory != null) {
+                maxMmory = Math.max(maxMmory, memory);
             }
         }
         // 正常运行完成
         if (outputList.size() == executeMessageList.size()) {
             executeCodeResponse.setStatus(1);
+            System.out.println("设置状态1");
         }
         executeCodeResponse.setOutput(outputList);
         JudgeInfo judgeInfo = new JudgeInfo();
+        judgeInfo.setMemory(maxMmory);
         judgeInfo.setTime(maxTime);
         // 要借助第三方库来获取内存占用，非常麻烦，此处不做实现
 //        judgeInfo.setMemory();
