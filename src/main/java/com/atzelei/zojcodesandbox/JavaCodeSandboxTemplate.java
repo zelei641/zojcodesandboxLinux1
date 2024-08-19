@@ -66,7 +66,6 @@ public abstract class JavaCodeSandboxTemplate implements CodeSandbox {
         return outputResponse;
     }
 
-
     /**
      * 1. 把用户的代码保存为文件
      * @param code 用户代码

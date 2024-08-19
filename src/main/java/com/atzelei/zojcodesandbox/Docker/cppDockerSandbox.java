@@ -22,6 +22,7 @@ import com.github.dockerjava.core.DockerClientImpl;
 import com.github.dockerjava.core.command.ExecStartResultCallback;
 import com.github.dockerjava.httpclient5.ApacheDockerHttpClient;
 import com.github.dockerjava.transport.DockerHttpClient;
+import org.springframework.stereotype.Component;
 import org.springframework.util.StopWatch;
 
 import java.io.*;
@@ -36,6 +37,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * cpp判题 demo
  */
+@Component
 public class cppDockerSandbox extends CodeSandboxTemplate
 {
 
