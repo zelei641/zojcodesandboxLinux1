@@ -38,14 +38,12 @@ import java.util.concurrent.TimeUnit;
  * cpp判题 demo
  */
 @Component
-public class cppDockerSandbox extends CodeSandboxTemplate
-{
+public class cppDockerSandbox extends CodeSandboxTemplate {
 
     //全局代码目录
     private static final String GLOBAL_CODE_DIR_NAME = "tmpCode";
     private static final long TIME_OUT = 5L;
     private static final Boolean FIRST_INIT = true;
-
 
 
     public static void main(String[] args) {
@@ -76,6 +74,7 @@ public class cppDockerSandbox extends CodeSandboxTemplate
 
     /**
      * 1. 把用户的代码保存为文件
+     *
      * @param code 用户代码
      * @return
      */
@@ -97,14 +96,14 @@ public class cppDockerSandbox extends CodeSandboxTemplate
     }
 
 
-
     /**
      * 2、编译代码
+     *
      * @param userCodeFile
      * @return
      */
     public ExecuteMessage compileFile(File userCodeFile) {
-        String compileCmd = String.format("g++ %s -o %s/HelloWorld", userCodeFile.getAbsolutePath(),userCodeFile.getParentFile().getAbsoluteFile());
+        String compileCmd = String.format("g++ %s -o %s/HelloWorld", userCodeFile.getAbsolutePath(), userCodeFile.getParentFile().getAbsoluteFile());
         System.out.println("compileCmd = " + compileCmd);
         try {
             Process compileProcess = Runtime.getRuntime().exec(compileCmd);
@@ -121,12 +120,13 @@ public class cppDockerSandbox extends CodeSandboxTemplate
 
     /**
      * 3、创建容器，把文件复制到容器内
+     *
      * @param userCodeFile
      * @param inputList
      * @return
      */
     @Override
-    public List<ExecuteMessage> runFile(File userCodeFile, List<String> inputList){
+    public List<ExecuteMessage> runFile(File userCodeFile, List<String> inputList) {
         String userCodeParentPath = userCodeFile.getParentFile().getAbsolutePath();
 //        DockerClientConfig config = DefaultDockerClientConfig.createDefaultConfigBuilder()
 //                .withDockerHost("tcp://119.3.220.170:2375")
@@ -173,7 +173,7 @@ public class cppDockerSandbox extends CodeSandboxTemplate
         // 2.创建容器
         CreateContainerCmd containerCmd = dockerClient.createContainerCmd(image);
         HostConfig hostConfig = new HostConfig();
-        hostConfig.withMemory(100 * 1000 * 1000L);
+        hostConfig.withMemory(300 * 1024 * 1024L); //100MB 单位是字节
         hostConfig.withMemorySwap(0L);
         hostConfig.withCpuCount(1L);
         //hostConfig.withSecurityOpts(Arrays.asList("seccomp=安全管理配置字符串"));
@@ -201,11 +201,9 @@ public class cppDockerSandbox extends CodeSandboxTemplate
             String[] inputArgsArray = inputArgs.split(" ");
             //String[] cmdArray = ArrayUtil.append(new String[]{"java", "-cp", "/app", "Main"}, inputArgsArray);
             //String[] cmdArray = ArrayUtil.append(new String[]{"ls"});
-            String[] cmdArray1 = ArrayUtil.append(new String[]{"cp","app/HelloWorld","HelloWorld"});
+            String[] cmdArray1 = ArrayUtil.append(new String[]{"cp", "app/HelloWorld", "HelloWorld"});
             String[] cmdArray = ArrayUtil.append(new String[]{"./HelloWorld"});
             //String[] cmdArray = ArrayUtil.append(new String[]{"/bin/bash", "-c", "read -p 'Enter input: ' input; echo $input"});
-
-
 
 
             System.out.println("创建执行命令：" + inputArgsArray);
@@ -226,7 +224,7 @@ public class cppDockerSandbox extends CodeSandboxTemplate
             final ExecuteMessage executeMessage = new ExecuteMessage();
             final String[] message = {null};
             final String[] errorMessage = {null};
-            long time = 0L;
+            long[] time ={0L};
             // 判断是否超时
             final boolean[] timeout = {true};
 
@@ -252,6 +250,8 @@ public class cppDockerSandbox extends CodeSandboxTemplate
                         System.out.println("输出结果：" + message[0]);
                         executeMessage.setMessage(message[0]);
                     }
+                    stopWatch.stop();
+                    time[0] = stopWatch.getLastTaskTimeMillis();
                     super.onNext(frame);
                 }
             };
@@ -293,7 +293,7 @@ public class cppDockerSandbox extends CodeSandboxTemplate
             // 3. 准备输入数据
 
             try {
-                stopWatch.start();
+
                 InputStream inputStream = new ByteArrayInputStream(new String(inputArgs + "\n").getBytes());
 
                 //InputStream inputStream = new ByteArrayInputStream(new String(inputArgs + "\n").getBytes());
@@ -307,32 +307,28 @@ public class cppDockerSandbox extends CodeSandboxTemplate
 //                    System.out.println("Char:" + ch);
 //                }
                 dockerClient.execStartCmd(execIdFront)
-                        .exec(new ExecStartResultCallback(){})
+                        .exec(new ExecStartResultCallback() {
+                        })
                         .awaitCompletion(TIME_OUT, TimeUnit.SECONDS);
-
+                stopWatch.start();
                 dockerClient.execStartCmd(execId)
                         .withStdIn(inputStream)
                         .exec(execStartResultCallback)
                         .awaitCompletion(TIME_OUT, TimeUnit.SECONDS);
 
                 inputStream.close();
-
-
-                stopWatch.stop();
-                time = stopWatch.getLastTaskTimeMillis();
                 statsCmd.close();
             } catch (InterruptedException | IOException e) {
                 System.out.println("程序执行异常");
                 throw new RuntimeException(e);
             }
-            executeMessage.setTime(time);
+            executeMessage.setTime(Math.max(time[0], executeMessage.getTime() != null ? executeMessage.getTime() : 0));
             executeMessageList.add(executeMessage);
         }
         dockerClient.stopContainerCmd(containerId).exec();
         dockerClient.removeContainerCmd(containerId).exec();
         return executeMessageList;
     }
-
 
 
 }

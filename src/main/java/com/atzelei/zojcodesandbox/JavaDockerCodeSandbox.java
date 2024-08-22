@@ -99,7 +99,7 @@ public class JavaDockerCodeSandbox extends JavaCodeSandboxTemplate {
         // 2.创建容器
         CreateContainerCmd containerCmd = dockerClient.createContainerCmd(image);
         HostConfig hostConfig = new HostConfig();
-        hostConfig.withMemory(100 * 1000 * 1000L);
+        hostConfig.withMemory(300 * 1024 * 1024L);
         hostConfig.withMemorySwap(0L);
         hostConfig.withCpuCount(1L);
         //hostConfig.withSecurityOpts(Arrays.asList("seccomp=安全管理配置字符串"));
@@ -144,7 +144,7 @@ public class JavaDockerCodeSandbox extends JavaCodeSandboxTemplate {
             final ExecuteMessage executeMessage = new ExecuteMessage();
             final String[] message = {null};
             final String[] errorMessage = {null};
-            long time = 0L;
+            final long[] time = {0L};
             // 判断是否超时
             final boolean[] timeout = {true};
             String execId = execCreateCmdResponse.getId();
@@ -170,6 +170,8 @@ public class JavaDockerCodeSandbox extends JavaCodeSandboxTemplate {
                         System.out.println("输出结果：" + message[0]);
                         executeMessage.setMessage(message[0]);
                     }
+                    stopWatch.stop();
+                    time[0] = stopWatch.getLastTaskTimeMillis();
                     super.onNext(frame);
                 }
             };
@@ -232,14 +234,14 @@ public class JavaDockerCodeSandbox extends JavaCodeSandboxTemplate {
                 inputStream.close();
 
 
-                stopWatch.stop();
-                time = stopWatch.getLastTaskTimeMillis();
+//                stopWatch.stop();
+//                time[0] = stopWatch.getLastTaskTimeMillis();
                 statsCmd.close();
             } catch (InterruptedException | IOException e) {
                 System.out.println("程序执行异常");
                 throw new RuntimeException(e);
             }
-            executeMessage.setTime(time);
+            executeMessage.setTime(Math.max(time[0], executeMessage.getTime() != null ? executeMessage.getTime() : 0));
             executeMessageList.add(executeMessage);
         }
         dockerClient.stopContainerCmd(containerId).exec();
